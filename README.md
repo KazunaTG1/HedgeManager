@@ -1,0 +1,2 @@
+# HedgeManager
+Manage hedged portfolios
