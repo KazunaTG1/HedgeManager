@@ -47,9 +47,6 @@ total_wait_time_sec = 300
 refresh_div = 30.0
 refresh_rate = total_wait_time_sec / refresh_div
 
-opQQQ = { "Ticker": "QQQ", "Expiration": "2025-07-03", "Strikes": { "Call": 550, "Put": 525 } }
-opSPY = { "Ticker": "SPY", "Expiration": "2025-07-03", "Strikes": { "Call": 620, "Put": 610} }
-
 def get_positions(option):
     call = get_contract(option["Ticker"], option["Expiration"], option["Strikes"]["Call"], "call")
     put = get_contract(option["Ticker"], option["Expiration"], option["Strikes"]["Put"], "put")
@@ -74,7 +71,7 @@ ctk.set_default_color_theme("blue")
 # Create main window
 app = ctk.CTk()
 app.title("Delta Hedge Manager")
-app.geometry("600x900")
+app.geometry("600x1000")
 
 # Header label
 header = ctk.CTkLabel(app, text="Delta Hedge Manager", font=("Arial", 32, "bold"))
@@ -88,20 +85,16 @@ ticker_entry.pack(pady=5)
 expiration_entry = ctk.CTkEntry(app, width=300, placeholder_text=f'Expiration Date (YYYY-MM-DD)...')
 expiration_entry.pack(pady=5)
 
-strike_entry = ctk.CTkEntry(app, width=300, placeholder_text=f'Strike Price...')
-strike_entry.pack(pady=5)
+c_strike_entry = ctk.CTkEntry(app, width=300, placeholder_text=f'Call Strike Price...')
+c_strike_entry.pack(pady=5)
+
+p_strike_entry = ctk.CTkEntry(app, width=300, placeholder_text=f'Put Strike Price...')
+p_strike_entry.pack(pady=5)
 
 shares_entry = ctk.CTkEntry(app, width=300, placeholder_text=f"Shares... ")
 shares_entry.pack(pady=5)
-
-threshold_entry = ctk.CTkEntry(app, width=300, placeholder_text=f"Threshold:")
-threshold_entry.pack(pady=5)
-
-refresh_entry = ctk.CTkEntry(app, width=300, placeholder_text=f"Refresh rate (mins):")
-refresh_entry.pack(pady=5)
 LOCAL_TZ = ZoneInfo("America/New_York")
-min_per_refresh = 5
-ms_per_refresh = min_per_refresh * 60000
+options = []
 def seconds_until_next_quarter_hour(tz=LOCAL_TZ) -> float:
     now = datetime.now(tz)
     target = now.replace(minute=15, second=0, microsecond=0)
@@ -113,26 +106,50 @@ def schedule_next_update():
     app.after(delay_ms, update)
 def update():
     print(f"Refreshed: {datetime.now(LOCAL_TZ).strftime('%Y-%m-%d %H:%M:%S')}")
-
-    display()
+    for opt in options:
+        display_option(opt["spec"], opt["spec"]["Stock_Shares"], opt["header"], opt["body"], opt["alert"])
     schedule_next_update()
 def start():
     thresh = float(threshold_entry.get())
     threshold_lbl.configure(text=f"Threshold: ${thresh:.2f}")
-    refresh = float(refresh_entry.get())
-    ms_per_refresh = int(refresh * 60000)
-    refresh_lbl.configure(text=f"Refresh Rate: {refresh:.2f} min(s)")
-    if len(shares_entry.get()) > 0:
-        display()
-        schedule_next_update()
+    update()
+def add_option():
+    try:
+        spec = {
+            "Ticker": ticker_entry.get(), 
+            "Expiration": expiration_entry.get(), 
+            "Strikes": { 
+                "Call": float(c_strike_entry.get()), 
+                "Put": float(p_strike_entry.get())},
+            "Stock_Shares": float(shares_entry.get())}
+    except ValueError:
+        print("Enter numeric strikes")
+    widget_bundle = make_option_widgets(app, spec)
+    options.append(widget_bundle)
+    update()
+def make_option_widgets(parent, option_spec):
+    header = ctk.CTkLabel(parent, font=("Arial", 24, "bold"))
+    body = ctk.CTkLabel(parent, font=("Arial", 16))
+    alert = ctk.CTkLabel(parent, font=("Arial", 18, "bold"))
+    for w in (header, body, alert):
+        w.pack(pady=6)
+    return {"spec": option_spec, "header": header, "body": body, "alert": alert}
+add_btn = ctk.CTkButton(app, text="Add Option", command=add_option)
+add_btn.pack(pady=10)
 
-def display():
-    print("Updating...")
-    spy_st_delta = float(shares_entry.get())
-    display_option(opSPY, spy_st_delta, spy_header, spy_label, spy_alert_lbl)
+button = ctk.CTkButton(app, text="Refresh", command=start)
+button.pack(pady=10)
+
+threshold_entry = ctk.CTkEntry(app, width=300, placeholder_text=f"Threshold:")
+threshold_entry.pack(pady=5)
+
+
+
+
 # Output label
 
 def display_option(option, st_delta, header_lbl, label, alert_lbl):
+    
     call, put = get_positions(option)
     call_price = float(call["last"])
     put_price = float(put['last'])
@@ -156,29 +173,7 @@ dt_lbl.pack(pady=3)
 threshold_lbl = ctk.CTkLabel(app, text="", font=("Arial", 16))
 threshold_lbl.pack(pady=3)
 
-refresh_lbl = ctk.CTkLabel(app, text="", font=("Arial", 16))
-refresh_lbl.pack(pady=3)
 
-spy_header = ctk.CTkLabel(app, text="", font=("Arial", 24, "bold"))
-spy_header.pack(pady=10)
-
-spy_label = ctk.CTkLabel(app, text="", font=("Arial", 16))
-spy_label.pack(pady=10)
-
-spy_alert_lbl = ctk.CTkLabel(app, text="", font=("Arial", 18, "bold"))
-spy_alert_lbl.pack(pady=10)
-
-qqq_header = ctk.CTkLabel(app, text="", font=("Arial", 24, "bold"))
-qqq_header.pack(pady=10)
-
-qqq_label = ctk.CTkLabel(app, text="", font=("Arial", 16))
-qqq_label.pack(pady=10)
-
-qqq_alert_lbl = ctk.CTkLabel(app, text="", font=("Arial", 18, "bold"))
-qqq_alert_lbl.pack(pady=10)
-
-button = ctk.CTkButton(app, text="Start", command=start)
-button.pack(pady=20)
 
 # Start app
 app.mainloop()
