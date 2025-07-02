@@ -3,7 +3,6 @@ from IPython.display import display, clear_output
 import math
 import yfinance as yf
 from matplotlib import pyplot as plt
-import schedule
 import time
 import platform
 from datetime import datetime, timezone, timedelta
@@ -73,25 +72,28 @@ app = ctk.CTk()
 app.title("Delta Hedge Manager")
 app.geometry("600x1000")
 
+
 # Header label
 header = ctk.CTkLabel(app, text="Delta Hedge Manager", font=("Arial", 32, "bold"))
 header.pack(pady=30)
 
+scroll_frame = ctk.CTkScrollableFrame(app, width=400, height=500)
+scroll_frame.pack(pady=10, padx=10, fill="both", expand=True)
 # Entry fields
 
-ticker_entry = ctk.CTkEntry(app, width=300, placeholder_text=f'Stock Ticker...')
+ticker_entry = ctk.CTkEntry(scroll_frame, width=300, placeholder_text=f'Stock Ticker...')
 ticker_entry.pack(pady=5)
 
-expiration_entry = ctk.CTkEntry(app, width=300, placeholder_text=f'Expiration Date (YYYY-MM-DD)...')
+expiration_entry = ctk.CTkEntry(scroll_frame, width=300, placeholder_text=f'Expiration Date (YYYY-MM-DD)...')
 expiration_entry.pack(pady=5)
 
-c_strike_entry = ctk.CTkEntry(app, width=300, placeholder_text=f'Call Strike Price...')
+c_strike_entry = ctk.CTkEntry(scroll_frame, width=300, placeholder_text=f'Call Strike Price...')
 c_strike_entry.pack(pady=5)
 
-p_strike_entry = ctk.CTkEntry(app, width=300, placeholder_text=f'Put Strike Price...')
+p_strike_entry = ctk.CTkEntry(scroll_frame, width=300, placeholder_text=f'Put Strike Price...')
 p_strike_entry.pack(pady=5)
 
-shares_entry = ctk.CTkEntry(app, width=300, placeholder_text=f"Shares... ")
+shares_entry = ctk.CTkEntry(scroll_frame, width=300, placeholder_text=f"Shares... ")
 shares_entry.pack(pady=5)
 LOCAL_TZ = ZoneInfo("America/New_York")
 options = []
@@ -124,7 +126,7 @@ def add_option():
             "Stock_Shares": float(shares_entry.get())}
     except ValueError:
         print("Enter numeric strikes")
-    widget_bundle = make_option_widgets(app, spec)
+    widget_bundle = make_option_widgets(scroll_frame, spec)
     options.append(widget_bundle)
     update()
 def make_option_widgets(parent, option_spec):
@@ -134,13 +136,13 @@ def make_option_widgets(parent, option_spec):
     for w in (header, body, alert):
         w.pack(pady=6)
     return {"spec": option_spec, "header": header, "body": body, "alert": alert}
-add_btn = ctk.CTkButton(app, text="Add Option", command=add_option)
+add_btn = ctk.CTkButton(scroll_frame, text="Add Option", command=add_option)
 add_btn.pack(pady=10)
 
-button = ctk.CTkButton(app, text="Refresh", command=start)
+button = ctk.CTkButton(scroll_frame, text="Refresh", command=start)
 button.pack(pady=10)
 
-threshold_entry = ctk.CTkEntry(app, width=300, placeholder_text=f"Threshold:")
+threshold_entry = ctk.CTkEntry(scroll_frame, width=300, placeholder_text=f"Threshold:")
 threshold_entry.pack(pady=5)
 
 
